@@ -24,3 +24,8 @@ a {
   background-color: aquamarine;
   color: black;
 }
+
+.isFile {
+  background-color: black;
+  color: grey;
+}

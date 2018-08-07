@@ -53,8 +53,9 @@
       //$.post('/showFolder', {folder: '#benzen'}, (data) => {console.log(data);});
       
       $.get('/fileList', function (data) {
+        console.log(data);
         data.forEach((val, idx, arr) => {
-          $('#fileList').append(`<p>${val}</p>`);
+          $('#fileList').append(val.isDirectory ? `<p>${val.fileName}</p>` : `<p class="isFile">${val.fileName}</p>`);
         });
       });
 
@@ -68,8 +69,10 @@
         }
       });
 
-      $('#fileList').hover(e => {
-        console.log(e.target);
+      $(document).on('mouseenter', '#fileList p', e => {
+      });
+
+      $(document).on('mouseleave', '#fileList p', e => {
       });
 
     })
