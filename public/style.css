@@ -1,0 +1,26 @@
+body {
+  background-color: black;
+  color: white;
+}
+
+a {
+  color: yellow;
+}
+
+#fileList {
+  margin-left: 2%;
+}
+
+#fileList p {
+  margin: 0;
+}
+
+#fileList p:hover {
+  background-color: blanchedalmond;
+  color: black;
+}
+
+.selected {
+  background-color: aquamarine;
+  color: black;
+}
