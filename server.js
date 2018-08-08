@@ -2,7 +2,7 @@ const fs = require("fs");
 const express = require("express");
 const bodyParser = require("body-parser");
 const app = express();
-const PORT = 3000;
+const PORT = 30000;
 
 app.use(express.static("public"));
 app.use(bodyParser.json());
@@ -31,26 +31,30 @@ app.get("/fileList", (req, res) => {
       }
     });
   });
+});
 
-  
-  // var fileLists = [];
-  
-  // fs.readdir(`/`, (err, files) => {
-  //   files.forEach((val, idx, arr) => {
-  //     fs.stat(`/${val}`, (err, stats) => {
-  //       if(err === null){
-  //         if(stats.isDirectory()){
-  //           fileLists.push({fileName: val, isDirectory: true});
-  //         }else{
-  //           fileLists.push({fileName: val, isDirectory: false});          
-  //         }
-  //       }
-  //       // console.log(fileLists.length);
-  //     });
-  //   });
-  //   console.log("df;gjdiogjerogirjegklrejkgl")
-  //   res.json(files);
-  // });
+app.post("/fileList", (req, res) => {
+  console.log(req.body);
+  var path = req.body.path;
+
+  var fileList = [];
+  var files = fs.readdirSync(path);
+  files.forEach((file, i, arr) => {
+    fs.stat(`/${file}`, (err, stats) => {
+      console.log(err);
+      if(err === null){
+        if(stats.isDirectory()){
+          fileList.push({fileName: file, isDirectory: true});
+        }else{
+          fileList.push({fileName: file, isDirectory: false});
+        }
+      }
+      if(i === arr.length-1) {
+        //console.log(fileList);
+        res.json(fileList);
+      }
+    });
+  });
 });
 
 // 폴더

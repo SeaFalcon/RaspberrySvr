@@ -50,12 +50,57 @@
     var selectedList = [];
 
     $(document).ready(function () {
-      //$.post('/showFolder', {folder: '#benzen'}, (data) => {console.log(data);});
+      rendering('c:/');
+
+      // $.get('/fileList', function (data) {
+      //   console.log(data);
+      //   data.forEach((val, idx, arr) => {
+      //     $('#fileList').append(val.isDirectory ? `<p>${val.fileName}</p>` : `<p class="isFile">${val.fileName}</p>`);
+      //   });
+      // });
+
+      // $('#fileList').click(e => {
+      //   if ($(e.target).hasClass('selected')) {
+      //     $(e.target).removeClass('selected');
+      //     selectedList.pop($(e.target).text());
+      //   } else {
+      //     $(e.target).addClass('selected');
+      //     selectedList.push($(e.target).text());
+      //   }
+      // });
+
+      // $(document).on('mouseenter', '#fileList p', e => {
+      //   var folder = $(`<button>`).text("폴더열기").click(function(){
+      //     alert();
+      //   });
+      //   var file = $(`<button>`).text("파일열기").click(function(){
+      //     alert();
+      //   });
+
+      //   if($(e.target).hasClass('isFile')){
+      //     file.appendTo(e.target);
+      //   }else{
+      //     folder.appendTo(e.target);
+      //   }
+      // });
+
+      // $(document).on('mouseleave', '#fileList p', e => {
+      //   $('button').remove()
+      // });
+
+    })
+
+    function rendering(path){
       
-      $.get('/fileList', function (data) {
+      $('#fileList').children().remove();
+      selectedList = [];
+
+      $.post('/fileList', {path: path}, function (data) {
         console.log(data);
         data.forEach((val, idx, arr) => {
-          $('#fileList').append(val.isDirectory ? `<p>${val.fileName}</p>` : `<p class="isFile">${val.fileName}</p>`);
+          var file = $(`<p class="isFile">${val.fileName}</p>`).data('fileName', val.fileName);
+          var folder = $(`<p>${val.fileName}</p>`).data('fileName', val.fileName);
+          $('#fileList').append(val.isDirectory ? folder : file);
         });
       });
 
@@ -70,12 +115,23 @@
       });
 
       $(document).on('mouseenter', '#fileList p', e => {
+        var folder = $(`<button>`).text("폴더열기").click(function(){
+          rendering(`${path}${$(e.target).data("fileName")}`);
+        });
+        var file = $(`<button>`).text("파일열기").click(function(){
+        });
+
+        if($(e.target).hasClass('isFile')){
+          file.appendTo(e.target);
+        }else{
+          folder.appendTo(e.target);
+        }
       });
 
       $(document).on('mouseleave', '#fileList p', e => {
+        $('button').remove()
       });
-
-    })
+    }
 
   </script>
 
