@@ -1,5 +1,6 @@
 const path = require("path");
 const fs = require("fs");
+const os = require("os");
 const express = require("express");
 const bodyParser = require("body-parser");
 const app = express();
@@ -8,6 +9,14 @@ const PORT = 3000;
 app.use(express.static("public"));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+console.log(os.tmpdir());       // 임시 저장 폴더의 위치
+console.log(os.endianness());   // CPU의 endianness(BE 또는 LE)
+console.log(os.hostname());     // 호스트 이름(컴퓨터 이름)
+console.log(os.type());         // 운영체제 이름
+console.log(os.platform());     // 운영체제 플랫폼
+console.log(os.arch());         // 운영체제 아키텍처
+console.log(os.release());      // 운영체제 버전
 
 app.get("/notice", (req, res) => {
   // res.sendFile(__dirname + '/public/index.html');
@@ -35,6 +44,11 @@ app.get("/fileList", (req, res) => {
 
 app.post("/fileList", (req, res) => {
   var dir = req.body.path;
+
+  if("win32".slice(0,3) !== 'win'){
+    dir = '/'
+  }
+
   var fileList = [];
   var files = fs.readdirSync(dir);
 
@@ -73,7 +87,7 @@ app.post("/deleteFolder", (req, res) => {
   });
   fs.rmdirSync(params);
 
-  
+
 });
 
 // 파일
