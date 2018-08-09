@@ -90,13 +90,23 @@
 
     })
 
-    function rendering(path){
-      
+    function rendering(path) {
+      $('button').remove();
       $('#fileList').children().remove();
+      $(document).off('mouseenter', '#fileList p');
       selectedList = [];
 
-      $.post('/fileList', {path: path}, function (data) {
-        console.log(data);
+      var arrPath = path.split('\\');
+      $('#fileList').prepend(`<h3>${path}</3>`)
+      //console.log(arrPath);
+
+      if (arrPath.length > 2) {
+        $('#fileList').append($(`<p class="isFile">.</p>`).data('fileName', 'root').click(e => {rendering('C:\\');}));
+        $('#fileList').append($(`<p class="isFile">..</p>`).data('fileName', 'upper').click(e => {rendering(arrPath.slice(0, arrPath.length-2).join('\\') + '\\');}));
+      }
+
+      $.post('/fileList', { path: path }, function (data) {
+        //console.log(data);
         data.forEach((val, idx, arr) => {
           var file = $(`<p class="isFile">${val.fileName}</p>`).data('fileName', val.fileName);
           var folder = $(`<p>${val.fileName}</p>`).data('fileName', val.fileName);
@@ -115,15 +125,16 @@
       });
 
       $(document).on('mouseenter', '#fileList p', e => {
-        var folder = $(`<button>`).text("폴더열기").click(function(){
-          rendering(`${path}${$(e.target).data("fileName")}`);
+        //console.log(path);
+        var folder = $(`<button>`).text("폴더열기").click(function () {
+          rendering(`${path}${$(e.target).data("fileName")}\\`);
         });
-        var file = $(`<button>`).text("파일열기").click(function(){
+        var file = $(`<button>`).text("파일열기").click(function () {
         });
 
-        if($(e.target).hasClass('isFile')){
-          file.appendTo(e.target);
-        }else{
+        if ($(e.target).hasClass('isFile')) {
+          //file.appendTo(e.target);
+        } else {
           folder.appendTo(e.target);
         }
       });
