@@ -1,3 +1,4 @@
+const path = require("path");
 const fs = require("fs");
 const express = require("express");
 const bodyParser = require("body-parser");
@@ -34,14 +35,17 @@ app.get("/fileList", (req, res) => {
 });
 
 app.post("/fileList", (req, res) => {
-  console.log(req.body);
-  var path = req.body.path;
+  fs.access('c:\\', (err) => {
+    console.log(err);
+  })
 
+  var dir = req.body.path;
   var fileList = [];
-  var files = fs.readdirSync(path);
+  var files = fs.readdirSync(dir);
+
   files.forEach((file, i, arr) => {
-    fs.stat(`/${file}`, (err, stats) => {
-      console.log(err);
+    fs.stat(path.join(dir, file), (err, stats) => {
+      
       if(err === null){
         if(stats.isDirectory()){
           fileList.push({fileName: file, isDirectory: true});
