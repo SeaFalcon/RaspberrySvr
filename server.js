@@ -4,53 +4,36 @@ const os = require("os");
 const express = require("express");
 const bodyParser = require("body-parser");
 const app = express();
-const PORT = 3000;
+const PORT = os.hostname() == 'DEV-05-PC' ? 30000 : 3000;
 
 app.use(express.static("public"));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-console.log(os.tmpdir());       // 임시 저장 폴더의 위치
-console.log(os.endianness());   // CPU의 endianness(BE 또는 LE)
-console.log(os.hostname());     // 호스트 이름(컴퓨터 이름)
-console.log(os.type());         // 운영체제 이름
-console.log(os.platform());     // 운영체제 플랫폼
-console.log(os.arch());         // 운영체제 아키텍처
-console.log(os.release());      // 운영체제 버전
+// console.log(os.tmpdir());       // 임시 저장 폴더의 위치
+// console.log(os.endianness());   // CPU의 endianness(BE 또는 LE)
+// console.log(os.hostname());     // 호스트 이름(컴퓨터 이름)
+// console.log(os.type());         // 운영체제 이름
+// console.log(os.platform());     // 운영체제 플랫폼
+// console.log(os.arch());         // 운영체제 아키텍처
+// console.log(os.release());      // 운영체제 버전
 
 app.get("/notice", (req, res) => {
   // res.sendFile(__dirname + '/public/index.html');
 });
 
 // 루트
-app.get("/fileList", (req, res) => {
-  var fileList = [];
-  var files = fs.readdirSync("/");
-  files.forEach((file, i, arr) => {
-    fs.stat(`/${file}`, (err, stats) => {
-      if (err === null) {
-        if (stats.isDirectory()) {
-          fileList.push({ fileName: file, isDirectory: true });
-        } else {
-          fileList.push({ fileName: file, isDirectory: false });
-        }
-      }
-      if (i === arr.length - 1) {
-        res.json(fileList);
-      }
-    });
-  });
-});
-
 app.post("/fileList", (req, res) => {
   var dir = req.body.path;
 
-  if("win32".slice(0,3) !== 'win'){
+  if (os.platform().slice(0, 3) !== 'win') {
+    //console.log(os.platform().slice(0, 3), 'win', os.platform().slice(0, 3) !== 'win')
     dir = '/'
   }
 
   var fileList = [];
   var files = fs.readdirSync(dir);
+  console.log(dir);
 
   files.forEach((file, i, arr) => {
     try {
@@ -59,7 +42,7 @@ app.post("/fileList", (req, res) => {
       } else {
         fileList.push({ fileName: file, isDirectory: false });
       }
-    } catch (err) {}
+    } catch (err) { }
   });
   res.json(fileList);
 });
@@ -107,8 +90,27 @@ app.post("/deleteFile", (req, res) => {
   var params = req.body;
 });
 
+app.get("/fileList", (req, res) => {
+  var fileList = [];
+  var files = fs.readdirSync("/");
+  files.forEach((file, i, arr) => {
+    fs.stat(`/${file}`, (err, stats) => {
+      if (err === null) {
+        if (stats.isDirectory()) {
+          fileList.push({ fileName: file, isDirectory: true });
+        } else {
+          fileList.push({ fileName: file, isDirectory: false });
+        }
+      }
+      if (i === arr.length - 1) {
+        res.json(fileList);
+      }
+    });
+  });
+});
+
 app.listen(PORT, () => {
-  require("dns").lookup(require("os").hostname(), function(err, add, fam) {
+  require("dns").lookup(require("os").hostname(), function (err, add, fam) {
     console.log("addr: " + add);
   });
   console.log(`Listening on ${PORT} Port...`);
