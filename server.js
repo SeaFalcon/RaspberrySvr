@@ -10,14 +10,6 @@ app.use(express.static("public"));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// console.log(os.tmpdir());       // 임시 저장 폴더의 위치
-// console.log(os.endianness());   // CPU의 endianness(BE 또는 LE)
-// console.log(os.hostname());     // 호스트 이름(컴퓨터 이름)
-// console.log(os.type());         // 운영체제 이름
-// console.log(os.platform());     // 운영체제 플랫폼
-// console.log(os.arch());         // 운영체제 아키텍처
-// console.log(os.release());      // 운영체제 버전
-
 app.get("/notice", (req, res) => {
   // res.sendFile(__dirname + '/public/index.html');
 });
@@ -26,10 +18,10 @@ app.get("/notice", (req, res) => {
 app.post("/fileList", (req, res) => {
   var dir = req.body.path;
 
-  if (os.platform().slice(0, 3) !== 'win') {
-    //console.log(os.platform().slice(0, 3), 'win', os.platform().slice(0, 3) !== 'win')
-    dir = '/'
-  }
+  // if (os.platform().slice(0, 3) !== 'win') {
+  //   //console.log(os.platform().slice(0, 3), 'win', os.platform().slice(0, 3) !== 'win')
+  //   dir = '/'
+  // }
 
   var fileList = [];
   var files = fs.readdirSync(dir);
@@ -108,6 +100,18 @@ app.get("/fileList", (req, res) => {
     });
   });
 });
+
+app.post("/osInfo", (req, res) => {
+  res.json({
+    tmpdir: os.tmpdir(),       // 임시 저장 폴더의 위치
+    endianness: os.endianness(),   // CPU의 endianness(BE 또는 LE)
+    hostname: os.hostname(),     // 호스트 이름(컴퓨터 이름)
+    type: os.type(),         // 운영체제 이름
+    platform: os.platform(),     // 운영체제 플랫폼
+    arch: os.arch(),         // 운영체제 아키텍처
+    release: os.release(),      // 운영체제 버전
+  })
+})
 
 app.listen(PORT, () => {
   require("dns").lookup(require("os").hostname(), function (err, add, fam) {

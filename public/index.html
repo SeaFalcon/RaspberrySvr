@@ -50,7 +50,13 @@
     var selectedList = [];
 
     $(document).ready(function () {
-      rendering('C:\\');
+      $.post('osInfo', (os) => {
+        if(os.platform.slice(0,3) == 'win'){
+          rendering('C:\\');
+        }else{
+          rendering('/');
+        }
+      })
 
       // $.get('/fileList', function (data) {
       //   console.log(data);
