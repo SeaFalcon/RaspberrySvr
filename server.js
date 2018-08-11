@@ -10,10 +10,6 @@ app.use(express.static("public"));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.get("/notice", (req, res) => {
-  // res.sendFile(__dirname + '/public/index.html');
-});
-
 // 루트
 app.post("/fileList", (req, res) => {
   var dir = req.body.path;
@@ -27,19 +23,40 @@ app.post("/fileList", (req, res) => {
   files.forEach((file, i, arr) => {
     try {
       if (fs.statSync(path.join(dir, file)).isDirectory()) {
-        fileList.push({ fileName: file, isDirectory: true });
+        try{
+          fs.readdirSync(path.join(dir, file));
+        }catch(err){
+          fileList.push({ name: file, isDirectory: true, permission: false});
+          return;
+        }
+        fileList.push({ name: file, isDirectory: true, permission: true});
       } else {
-        fileList.push({ fileName: file, isDirectory: false });
+        try{
+          fs.readdirSync(path.join(dir, file));
+        }catch(err){
+          if(err.errno === -13){
+            fileList.push({ name: file, isDirectory: false, permission: false});
+            return;
+          }
+        }
+        fileList.push({ name: file, isDirectory: false, permission: true});
       }
     } catch (err) {}
   });
   res.json(fileList);
 });
 
+
 // 폴더
-app.post("/showFolder", (req, res) => {
-  var params = req.body;
-  //fs.readdir() params.folder
+app.post("/mkdir", (req, res) => {
+  var name = req.body.dirName;
+  fs.mkdir(`/${name}`, err => {
+    if(err){
+      res.json({result: err});
+    }else{
+      res.json({result: 'mkdir ${name} SUCCESS'});
+    }
+  });
 });
 
 app.post("/moveFolder", (req, res) => {
@@ -50,16 +67,25 @@ app.post("/copyFolder", (req, res) => {
   var params = req.body;
 });
 
-app.post("/deleteFolder", (req, res) => {
-  var params = req.body.path;
+app.post("/rmdir", (req, res) => {
+  var success = [];
+  var errList = [];
+  var p  = req.body.path;
+  var dirList = req.body.dirList;
 
-  var dir = fs.readdirSync(params);
-  dir.forEach(d => {
-    fs.unlinkSync(path.join(params, d));
+  dirList.forEach(dir => {
+    try {
+      fs.rmdirSync(p + dir);
+      success.push(`${dir} 폴더 삭제 성공!`);
+    } catch(err){
+      errList.push(err);
+    }
   });
-  fs.rmdirSync(params);
 
-
+  res.json({
+    success: success,
+    err: errList
+  });
 });
 
 // 파일
@@ -77,25 +103,6 @@ app.post("/copyFile", (req, res) => {
 
 app.post("/deleteFile", (req, res) => {
   var params = req.body;
-});
-
-app.get("/fileList", (req, res) => {
-  var fileList = [];
-  var files = fs.readdirSync("/");
-  files.forEach((file, i, arr) => {
-    fs.stat(`/${file}`, (err, stats) => {
-      if (err === null) {
-        if (stats.isDirectory()) {
-          fileList.push({ fileName: file, isDirectory: true });
-        } else {
-          fileList.push({ fileName: file, isDirectory: false });
-        }
-      }
-      if (i === arr.length - 1) {
-        res.json(fileList);
-      }
-    });
-  });
 });
 
 app.post("/osInfo", (req, res) => {

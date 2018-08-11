@@ -6,16 +6,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <link rel="stylesheet" href="/style.css">
+
+  <!-- Compiled and minified CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-rc.2/css/materialize.min.css">
+
+  <!-- Compiled and minified JavaScript -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-rc.2/js/materialize.min.js"></script>
+
   <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
     crossorigin="anonymous"></script>
-  <title>Telegram Bot Guide</title>
+
+  <!-- <title>Telegram Bot Guide</title> -->
+  <title>Raspberry File System</title>
 </head>
 
-<h3>
+<h4>
 
   <!-- <h1>
     << 이번 주 모임 공지>></h1>
-  <h3>@ 일정 : 금요일 저녁7시 / 큰 개념 숙지 해 올 것</h3>
+  <h4>@ 일정 : 금요일 저녁7시 / 큰 개념 숙지 해 올 것</h4>
 
   <ol>
     <li>텔레그램 봇이 무엇인지, 어떻게 사용하는지(만드는 방법)</li>
@@ -25,21 +34,26 @@
   </ol> -->
 
 
-  <h3>- 참고사이트</h3>
+  <!-- <h4>- 참고사이트</h4>
   <ul>
     <li>
       <a href="https://steemit.com/kr-dev/@maanya/30">
         [챗봇 만들기] 30분 만에 텔레그램 봇 만들기
       </a>
     </li>
-  </ul>
+  </ul> -->
 
-  <h3>- 라즈베리파이 원격 정보</h3>
+  <!-- <h4>- 라즈베리파이 원격 정보</h4>
   <div>IP/PORT: 14.47.253.134:22</div>
   <div>ID : skyim</div>
-  <div>Password :Passw0rd</div>
+  <div>Password :Passw0rd</div> -->
 
-  <h3>- 파일리스트</h3>
+  <h4>- 파일탐색기</h4>
+  <button class="btn" id="copy">복사</button>
+  <button class="btn" id="move">이동</button>
+  <button class="btn" id="remove">삭제</button>
+  <button class="btn" id="mkdir">폴더생성</button>
+  <button class="btn" id="touch">폴더생성</button>
   <div id='fileList'>
 
   </div>
@@ -47,10 +61,14 @@
   </body>
 
   <script>
-    var selectedList = [];
+    var selectedDirList = [];
+    var selectedFileList = [];
     var osType;
-    var OSTYPE_WINDOWS = 1
-    var OSTYPE_LINUX = 2
+    var OSTYPE_WINDOWS = 1;
+    var OSTYPE_LINUX = 2;
+    var arrPath;
+    var arrPathLinux;
+    var arrPathWin;
 
     $(document).ready(function () {
       $.post('osInfo', (os) => {
@@ -59,81 +77,167 @@
           rendering('C:\\');
         } else {
           osType = OSTYPE_LINUX
-          rendering('/');
+          rendering('/home/skyim/');
+          //rendering('/');
         }
-      })
-    })
+      });
+
+      $('#mkdir').click(mkdir);
+      $('#remove').click(remove);
+      $('#copy').click(copy);
+      $('#move').click(move);
+      $('#touch').click(touch);
+    });
 
     function rendering(path) {
-      $('button').remove();
       $('#fileList').children().remove();
-      $(document).off('mouseenter', '#fileList p');
-      selectedList = [];
+      $(document).off('click', '#fileList div');
+      $(document).off('click', ':checkbox');
+      selectedDirList = [];
+      selectedFileList = [];
 
-      var arrPathWin = path.split('\\');
-      $('#fileList').prepend(`<h3>${path}</3>`)
-      console.log(arrPath);
+      arrPath = osType === OSTYPE_LINUX ? path.split('/') : path.split('\\');
+      $('#fileList').prepend(`<h4>${path}</3>`)
 
-      if (arrPathWin.length > 2 && osType === OSTYPE_WINDOWS) {
-        $('#fileList').append($(`<p class="isFile">.</p>`).data('fileName', 'root').click(e => {
-          rendering('C:\\');
+      if (arrPath.length > 2) {
+        $('#fileList').append($(`<span class="isFile isUpper">.</span>`).data('name', 'root').click(e => {
+          rendering(osType === OSTYPE_WINDOWS ? 'C:\\' : '/');
         }));
-        $('#fileList').append($(`<p class="isFile">..</p>`).data('fileName', 'upper').click(e => {
-          rendering(arrPathWin.slice(0, arrPathWin.length - 2).join('\\') + '\\');
-        }));
-      }elseif(osType === OSTYPE_WINDOWS){
-        $('#fileList').append($(`<p class="isFile">.</p>`).data('fileName', 'root').click(e => {
-          rendering('C:\\');
-        }));
-        $('#fileList').append($(`<p class="isFile">..</p>`).data('fileName', 'upper').click(e => {
-          rendering(arrPathWin.slice(0, arrPathWin.length - 2).join('\\') + '\\');
+        $('#fileList').append($(`<span class="isFile isUpper">..</span>`).data('name', 'upper').click(e => {
+          rendering(osType === OSTYPE_WINDOWS ?
+            arrPath.slice(0, arrPath.length - 2).join('\\') + '\\' :
+            arrPath.slice(0, arrPath.length - 2).join('/') + '/'
+          );
         }));
       }
 
       $.post('/fileList', { path: path }, function (data) {
         console.log(data);
-        if (data.err) {
-          console.log(data.err);
-          alert(`${data.err.code}: permission denied, scandir ${path}`);
-          rendering(osType === OSTYPE_WINDOWS ? 'C:\\' : '/');
+
+        data.forEach((val, idx, arr) => {
+          var file = $(`
+              <div class="fileDiv">
+                <label>
+                  <input type="checkbox" class="" ${val.permission ? "" : "disabled"}/>
+                  <span class="checking" style="height: 15px;"></span>
+                </label>
+                <span class="isFile">${val.name}</span>
+              </div>
+            `).data('name', val.name).data('permission', val.permission);;
+
+          var folder = $(`
+              <div class="dirDiv">
+                <label>
+                  <input type="checkbox" class="filled-in" ${val.permission ? "" : "disabled"}/>
+                  <span class="checking" style="height: 15px;"></span>
+                </label>
+                <span class="isDir">${val.name}</span>
+              </div>
+            `).data('name', val.name).data('permission', val.permission);
+
+          $('#fileList').append(val.isDirectory ? folder : file);
+        });
+      });
+
+      $(document).on('click', '#fileList div', e => {
+        if (!$(e.target).closest('div').data("permission")) {
+          alert("접근 권한이 없습니다.");
+          return;
+        }
+
+        if ($(e.target).hasClass('fileDiv')) {
+        } else if ($(e.target).hasClass('dirDiv') || $(e.target).hasClass('isDir')) {
+          rendering(`${path}${$(e.target).closest('div').data("name")}${osType === OSTYPE_WINDOWS ? '\\' : '/'}`);
+        }
+      });
+
+      $(document).on('click', ':checkbox', e => {
+        if (e.target.checked) {
+          if ($(e.target).hasClass('filled-in')) {
+            selectedDirList.push($(e.target).closest('div').data('name'));
+          } else {
+            selectedFileList.push($(e.target).closest('div').data('name'));
+          }
         } else {
-          data.forEach((val, idx, arr) => {
-            var file = $(`<p class="isFile">${val.fileName}</p>`).data('fileName', val.fileName);
-            var folder = $(`<p>${val.fileName}</p>`).data('fileName', val.fileName);
-            $('#fileList').append(val.isDirectory ? folder : file);
+          if ($(e.target).hasClass('filled-in')) {
+            selectedDirList.pop($(e.target).closest('div').data('name'));
+          } else {
+            selectedFileList.pop($(e.target).closest('div').data('name'));
+          }
+        }
+        console.log(selectedDirList, selectedFileList);
+        //e.stopPropagation();
+      });
+
+      console.log($('title').text('RaspberryPie File System ' + path));
+    }
+
+    function mkdir() {
+      var dirName = prompt('생성할 폴더 이름을 입력하세요');
+
+      if (dirName && (dirName === "" || dirName.indexOf('/') > 0 || dirName.indexOf('\\') > 0)) {
+        alert("폴더 이름을 정확히 입력하세요");
+        return;
+      } else if (dirName === null) {
+        return;
+      }
+
+      $.post('/mkdir', { dirName: arrPath.join('/') + dirName }, res => {
+        console.log(res);
+        if (res.result && res.result.errno === -13) {
+          alert('현재 루트에서 폴더 생성 권한이 없습니다.');
+        } else if (res.result && res.result.errno === -17) {
+          alert(`${dirName} 폴더는 이미 존재합니다.`);
+        } else {
+          //alert(`${dirName} 폴더 생성이 완료 되었습니다.`);
+          rendering(arrPath.join('/'));
+        }
+      })
+    }
+
+    function remove() {
+      if (selectedDirList.length === 0 && selectedFileList.length === 0) {
+        alert('삭제 할 항목을 선택해주세요.');
+        return;
+      } else {
+        if (selectedDirList.length > 0) {
+          $.post('/rmdir', { 
+            path: arrPath.join('/'),
+            dirList: selectedDirList 
+          }, res => {
+            console.log(res);
           });
         }
-      });
-
-      $('#fileList').click(e => {
-        if ($(e.target).hasClass('selected')) {
-          $(e.target).removeClass('selected');
-          selectedList.pop($(e.target).text());
-        } else {
-          $(e.target).addClass('selected');
-          selectedList.push($(e.target).text());
+        
+        if (selectedFileList.length > 0) {
+          $.post('/unlinkFile', { fileList: selectedFileList })
         }
-      });
 
-      $(document).on('mouseenter', '#fileList p', e => {
-        //console.log(path);
-        var folder = $(`<button>`).text("폴더열기").click(function () {
-          rendering(`${path}${$(e.target).data("fileName")}${osType === OSTYPE_WINDOWS ? '\\' : '/'}`);
-        });
-        var file = $(`<button>`).text("파일열기").click(function () {
-        });
-
-        if ($(e.target).hasClass('isFile')) {
-          //file.appendTo(e.target);
-        } else {
-          folder.appendTo(e.target);
-        }
-      });
-
-      $(document).on('mouseleave', '#fileList p', e => {
-        $('button').remove()
-      });
+      }
+      
+      rendering(arrPath.join('/'));
     }
+
+    function copy() {
+      if (selectedDirList.length === 0) {
+        alert('복사 할 항목을 선택해주세요.');
+        return;
+      }
+
+    }
+
+    function move() {
+      if (selectedDirList.length === 0) {
+        alert('이동 할 항목을 선택해주세요.');
+        return;
+      }
+
+    }
+
+    function touch() {
+      
+    }
+
 
   </script>
 

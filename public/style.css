@@ -1,6 +1,7 @@
 body {
   background-color: black;
   color: white;
+  font-size: 2.5vh;
 }
 
 a {
@@ -11,11 +12,11 @@ a {
   margin-left: 2%;
 }
 
-#fileList p {
+#fileList div {
   margin: 0;
 }
 
-#fileList p:hover {
+#fileList div:hover {
   background-color: blanchedalmond;
   color: black;
 }
@@ -26,6 +27,25 @@ a {
 }
 
 .isFile {
-  background-color: black;
   color: grey;
 }
+
+.isUpper {
+  display: block;
+}
+
+.isFile:hover {
+  background-color: blanchedalmond;
+  color: black;
+}
+
+.interval {
+  width: 100vw;
+  float: left;
+}
+
+.innerInterval {
+  float: left;
+  width: 40vw;
+}
+
