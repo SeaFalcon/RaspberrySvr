@@ -48,52 +48,20 @@
 
   <script>
     var selectedList = [];
+    var osType;
+    var OSTYPE_WINDOWS = 1
+    var OSTYPE_LINUX = 2
 
     $(document).ready(function () {
       $.post('osInfo', (os) => {
-        if(os.platform.slice(0,3) == 'win'){
+        if (os.platform.slice(0, 3) == 'win') {
+          osType = OSTYPE_WINDOWS
           rendering('C:\\');
-        }else{
+        } else {
+          osType = OSTYPE_LINUX
           rendering('/');
         }
       })
-
-      // $.get('/fileList', function (data) {
-      //   console.log(data);
-      //   data.forEach((val, idx, arr) => {
-      //     $('#fileList').append(val.isDirectory ? `<p>${val.fileName}</p>` : `<p class="isFile">${val.fileName}</p>`);
-      //   });
-      // });
-
-      // $('#fileList').click(e => {
-      //   if ($(e.target).hasClass('selected')) {
-      //     $(e.target).removeClass('selected');
-      //     selectedList.pop($(e.target).text());
-      //   } else {
-      //     $(e.target).addClass('selected');
-      //     selectedList.push($(e.target).text());
-      //   }
-      // });
-
-      // $(document).on('mouseenter', '#fileList p', e => {
-      //   var folder = $(`<button>`).text("폴더열기").click(function(){
-      //     alert();
-      //   });
-      //   var file = $(`<button>`).text("파일열기").click(function(){
-      //     alert();
-      //   });
-
-      //   if($(e.target).hasClass('isFile')){
-      //     file.appendTo(e.target);
-      //   }else{
-      //     folder.appendTo(e.target);
-      //   }
-      // });
-
-      // $(document).on('mouseleave', '#fileList p', e => {
-      //   $('button').remove()
-      // });
-
     })
 
     function rendering(path) {
@@ -102,22 +70,39 @@
       $(document).off('mouseenter', '#fileList p');
       selectedList = [];
 
-      var arrPath = path.split('\\');
+      var arrPathWin = path.split('\\');
       $('#fileList').prepend(`<h3>${path}</3>`)
-      //console.log(arrPath);
+      console.log(arrPath);
 
-      if (arrPath.length > 2) {
-        $('#fileList').append($(`<p class="isFile">.</p>`).data('fileName', 'root').click(e => {rendering('C:\\');}));
-        $('#fileList').append($(`<p class="isFile">..</p>`).data('fileName', 'upper').click(e => {rendering(arrPath.slice(0, arrPath.length-2).join('\\') + '\\');}));
+      if (arrPathWin.length > 2 && osType === OSTYPE_WINDOWS) {
+        $('#fileList').append($(`<p class="isFile">.</p>`).data('fileName', 'root').click(e => {
+          rendering('C:\\');
+        }));
+        $('#fileList').append($(`<p class="isFile">..</p>`).data('fileName', 'upper').click(e => {
+          rendering(arrPathWin.slice(0, arrPathWin.length - 2).join('\\') + '\\');
+        }));
+      }elseif(osType === OSTYPE_WINDOWS){
+        $('#fileList').append($(`<p class="isFile">.</p>`).data('fileName', 'root').click(e => {
+          rendering('C:\\');
+        }));
+        $('#fileList').append($(`<p class="isFile">..</p>`).data('fileName', 'upper').click(e => {
+          rendering(arrPathWin.slice(0, arrPathWin.length - 2).join('\\') + '\\');
+        }));
       }
 
       $.post('/fileList', { path: path }, function (data) {
-        //console.log(data);
-        data.forEach((val, idx, arr) => {
-          var file = $(`<p class="isFile">${val.fileName}</p>`).data('fileName', val.fileName);
-          var folder = $(`<p>${val.fileName}</p>`).data('fileName', val.fileName);
-          $('#fileList').append(val.isDirectory ? folder : file);
-        });
+        console.log(data);
+        if (data.err) {
+          console.log(data.err);
+          alert(`${data.err.code}: permission denied, scandir ${path}`);
+          rendering(osType === OSTYPE_WINDOWS ? 'C:\\' : '/');
+        } else {
+          data.forEach((val, idx, arr) => {
+            var file = $(`<p class="isFile">${val.fileName}</p>`).data('fileName', val.fileName);
+            var folder = $(`<p>${val.fileName}</p>`).data('fileName', val.fileName);
+            $('#fileList').append(val.isDirectory ? folder : file);
+          });
+        }
       });
 
       $('#fileList').click(e => {
@@ -133,7 +118,7 @@
       $(document).on('mouseenter', '#fileList p', e => {
         //console.log(path);
         var folder = $(`<button>`).text("폴더열기").click(function () {
-          rendering(`${path}${$(e.target).data("fileName")}\\`);
+          rendering(`${path}${$(e.target).data("fileName")}${osType === OSTYPE_WINDOWS ? '\\' : '/'}`);
         });
         var file = $(`<button>`).text("파일열기").click(function () {
         });

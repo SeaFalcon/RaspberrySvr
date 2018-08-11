@@ -17,15 +17,12 @@ app.get("/notice", (req, res) => {
 // 루트
 app.post("/fileList", (req, res) => {
   var dir = req.body.path;
-
-  // if (os.platform().slice(0, 3) !== 'win') {
-  //   //console.log(os.platform().slice(0, 3), 'win', os.platform().slice(0, 3) !== 'win')
-  //   dir = '/'
-  // }
-
   var fileList = [];
-  var files = fs.readdirSync(dir);
-  console.log(dir);
+  try{
+    var files = fs.readdirSync(dir);
+  }catch(err){
+    res.json({'err': err});
+  }
 
   files.forEach((file, i, arr) => {
     try {
@@ -34,7 +31,7 @@ app.post("/fileList", (req, res) => {
       } else {
         fileList.push({ fileName: file, isDirectory: false });
       }
-    } catch (err) { }
+    } catch (err) {}
   });
   res.json(fileList);
 });
