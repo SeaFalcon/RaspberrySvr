@@ -74,7 +74,8 @@
       $.post('osInfo', (os) => {
         if (os.platform.slice(0, 3) == 'win') {
           osType = OSTYPE_WINDOWS
-          rendering('C:\\');
+          rendering('C:\\RaspberrySvr\\');
+          //rendering('C:\\');
         } else {
           osType = OSTYPE_LINUX
           rendering('/home/skyim/');
@@ -190,7 +191,7 @@
           alert(`${dirName} 폴더는 이미 존재합니다.`);
         } else {
           //alert(`${dirName} 폴더 생성이 완료 되었습니다.`);
-          rendering(arrPath.join('/'));
+          rendering(osType == OSTYPE_LINUX ? arrPath.join('/') : arrPath.join('\\'));
         }
       })
     }
@@ -222,7 +223,7 @@
 
       }
 
-      rendering(arrPath.join('/'));
+      rendering(osType == OSTYPE_LINUX ? arrPath.join('/') : arrPath.join('\\'));
     }
 
     function copy() {
@@ -259,7 +260,7 @@
           alert(`${fileName} 파일은 이미 존재합니다.`);
         } else {
           //alert(`${dirName} 폴더 생성이 완료 되었습니다.`);
-          rendering(arrPath.join('/'));
+          rendering(osType == OSTYPE_LINUX ? arrPath.join('/') : arrPath.join('\\'));
         }
       })
 

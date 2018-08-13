@@ -78,12 +78,14 @@ app.post("/rmdir", (req, res) => {
       fs.rmdirSync(path.join(p, dir));
       success.push(`${dir} 폴더 삭제 성공!`);
     } catch (err) {
-      if(err.errno === -39){
+      console.log(err.code);
+      if(err.code === "ENOTEMPTY"){
         fs.readdirSync(path.join(p, dir)).forEach(file => {
           try {
-            file.unlinkSync(path.join(p, dir, file));
+            fs.unlinkSync(path.join(p, dir, file));
             success.push(`${path.join(p, dir)} 폴더 내 ${file} 삭제 성공! `)
           } catch(err){
+            console.log(err.code);
             errList.push(err);
           }
         });
@@ -92,10 +94,12 @@ app.post("/rmdir", (req, res) => {
           fs.rmdirSync(path.join(p, dir));
           success.push(`${dir} 폴더 삭제 성공!`);
         } catch (err) {
+          console.log(err.code);
           errList.push(err);
         }
+      }else{
+        errList.push(err);
       }
-      errList.push(err);
     }
   });
 
