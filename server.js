@@ -54,7 +54,7 @@ app.post("/mkdir", (req, res) => {
     if (err) {
       res.json({ result: err });
     } else {
-      res.json({ result: 'mkdir ${name} SUCCESS' });
+      res.json({ result: `mkdir ${name} SUCCESS` });
     }
   });
 });
@@ -78,26 +78,39 @@ app.post("/rmdir", (req, res) => {
       fs.rmdirSync(path.join(p, dir));
       success.push(`${dir} 폴더 삭제 성공!`);
     } catch (err) {
-      console.log(err.code);
-      if(err.code === "ENOTEMPTY"){
+      //console.log(err.code);
+      errList.push(err);
+      if (err.code === "ENOTEMPTY") {
         fs.readdirSync(path.join(p, dir)).forEach(file => {
           try {
             fs.unlinkSync(path.join(p, dir, file));
             success.push(`${path.join(p, dir)} 폴더 내 ${file} 삭제 성공! `)
-          } catch(err){
+          } catch (err) {
             console.log(err.code);
             errList.push(err);
           }
         });
+
+        // console.log(path.join(p, dir));
+        // try{
+        //   fs.accessSync(path.join(p, dir), fs.constants.R_OK | fs.constants.W_OK | fs.constants.W_OK);
+        //   console.log(path.join(p, dir), 'can');
+        // }catch(err) {
+        //   console.log('cant');
+        //   console.log(err);
+        // }
+
         // 폴더 내 파일 삭제 후 폴더 삭제 시도
-        try{
-          fs.rmdirSync(path.join(p, dir));
-          success.push(`${dir} 폴더 삭제 성공!`);
-        } catch (err) {
-          console.log(err.code);
-          errList.push(err);
+        if (fs.readdirSync(path.join(p, dir)).length === 0) {
+          try {
+            fs.rmdirSync(path.join(p, dir));
+            success.push(`${dir} 폴더 삭제 성공!`);
+          } catch (err) {
+            console.log(err.code);
+            errList.push(err);
+          }
         }
-      }else{
+      } else {
         errList.push(err);
       }
     }
@@ -185,6 +198,19 @@ app.listen(PORT, () => {
   });
   console.log(`Listening on ${PORT} Port...`);
 });
+
+function rimraf(p){
+  try {
+    var dir = fs.readdirSync(p);
+    dir.forEach(d => {
+      rimraf(path.join(p, d));
+    })
+    fs.rmdirSync(p);
+  } catch (e) {
+    fs.unlinkSync(p);
+    console.log(`${p} 파일을 삭제했습니다.`);
+  }
+}
 
 // netstat -tnlp
 // kill -9 pid

@@ -74,7 +74,8 @@
       $.post('osInfo', (os) => {
         if (os.platform.slice(0, 3) == 'win') {
           osType = OSTYPE_WINDOWS
-          rendering('C:\\RaspberrySvr\\');
+          rendering('E:\\Chrome Download\\RaspberrySvr\\');
+          //rendering('C:\\RaspberrySvr\\');
           //rendering('C:\\');
         } else {
           osType = OSTYPE_LINUX
