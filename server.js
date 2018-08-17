@@ -1,9 +1,7 @@
 const path = require("path");
-const fs = require("fs");
+const fs = require("fs-extra");
 const os = require("os");
 const rimraf = require('rimraf');
-const ncp = require('ncp').ncp;
-ncp.limit = 16;
 const express = require("express");
 const bodyParser = require("body-parser");
 const app = express();
@@ -158,7 +156,7 @@ app.post("/move", (req, res) => {
 
   fileList.forEach(file => {
     console.log(path.join(p, file), dest);
-    ncp(path.join(p, file), dest, function (err) {
+    fs.copy(path.join(p, file), dest, function (err) {
       if (err) {
         return console.error(err);
       }
