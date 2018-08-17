@@ -1,6 +1,9 @@
 const path = require("path");
 const fs = require("fs");
 const os = require("os");
+const rimraf = require('rimraf');
+const ncp = require('ncp').ncp;
+ncp.limit = 16;
 const express = require("express");
 const bodyParser = require("body-parser");
 const app = express();
@@ -50,21 +53,19 @@ app.post("/fileList", (req, res) => {
 // 폴더
 app.post("/mkdir", (req, res) => {
   var name = req.body.dirName;
-  fs.mkdir(path.join(name), err => {
-    if (err) {
-      res.json({ result: err });
-    } else {
-      res.json({ result: `mkdir ${name} SUCCESS` });
-    }
-  });
-});
-
-app.post("/moveFolder", (req, res) => {
-  var params = req.body;
-});
-
-app.post("/copyFolder", (req, res) => {
-  var params = req.body;
+  // fs.mkdir(path.join(name), err => {
+  //   if (err) {
+  //     res.json({ result: err });
+  //   } else {
+  //     res.json({ result: `mkdir ${name} SUCCESS` });
+  //   }
+  // });
+  try {
+    fs.mkdirSync(path.join(name))
+    res.json({ result: `mkdir ${name} SUCCESS` });
+  } catch (err) {
+    res.json({ result: err });
+  }
 });
 
 app.post("/rmdir", (req, res) => {
@@ -90,15 +91,6 @@ app.post("/rmdir", (req, res) => {
             errList.push(err);
           }
         });
-
-        // console.log(path.join(p, dir));
-        // try{
-        //   fs.accessSync(path.join(p, dir), fs.constants.R_OK | fs.constants.W_OK | fs.constants.W_OK);
-        //   console.log(path.join(p, dir), 'can');
-        // }catch(err) {
-        //   console.log('cant');
-        //   console.log(err);
-        // }
 
         // 폴더 내 파일 삭제 후 폴더 삭제 시도
         if (fs.readdirSync(path.join(p, dir)).length === 0) {
@@ -145,18 +137,50 @@ app.post('/touch', (req, res) => {
   } catch (err) {
     res.json(err);
   }
+
+  // fs.open(path.join(name), 'wx', (err, fd) => {
+  //   if(err)
+  //     res.json(err);
+  //   res.json("생성 성공!");
+  // })
+
 })
 
 app.post("/showFile", (req, res) => {
   var params = req.body;
 });
 
-app.post("/moveFile", (req, res) => {
-  var params = req.body;
+app.post("/move", (req, res) => {
+  console.log(req.body);
+  var p = req.body.path;
+  var fileList = req.body.sources;
+  var dest = path.join(req.body.destination);
+
+  fileList.forEach(file => {
+    console.log(path.join(p, file), dest);
+    ncp(path.join(p, file), dest, function (err) {
+      if (err) {
+        return console.error(err);
+      }
+      console.log('done!');
+    });
+  });
 });
 
-app.post("/copyFile", (req, res) => {
-  var params = req.body;
+app.post("/copy", (req, res) => {
+  var p = req.body.path;
+  var fileList = req.body.sources;
+  var dest = path.join(req.body.destination);
+
+  fileList.forEach(file => {
+    ncp(path.join(p, fileList), dest, function (err) {
+      if (err) {
+        return console.error(err);
+      }
+      console.log('done!');
+    });
+  });
+
 });
 
 app.post("/unlinkFile", (req, res) => {
@@ -180,6 +204,26 @@ app.post("/unlinkFile", (req, res) => {
   });
 });
 
+// 파일, 폴더 삭제 통합
+app.post('/remove', (req, res) => {
+  var result = {
+    success: [],
+    errList: []
+  };
+  var p = req.body.path;
+  var list = req.body.name;
+  console.log(p, list);
+
+  list.forEach(l => {
+    // rimraf(path.join(p, l), result);
+    rimraf(path.join(p, l), { maxBusyTries: 100 }, err => {
+      console.log(err);
+    });
+  });
+
+  res.json(result);
+});
+
 app.post("/osInfo", (req, res) => {
   res.json({
     tmpdir: os.tmpdir(),       // 임시 저장 폴더의 위치
@@ -199,18 +243,37 @@ app.listen(PORT, () => {
   console.log(`Listening on ${PORT} Port...`);
 });
 
-function rimraf(p){
-  try {
-    var dir = fs.readdirSync(p);
-    dir.forEach(d => {
-      rimraf(path.join(p, d));
-    })
-    fs.rmdirSync(p);
-  } catch (e) {
-    fs.unlinkSync(p);
-    console.log(`${p} 파일을 삭제했습니다.`);
-  }
-}
+// function rimraf(p, result) {
+//   console.log(p, result);
+//   try {
+//     var dir = fs.readdirSync(p);
+//     dir.forEach(d => {
+//       console.log(p, result, d);
+//       rimraf(path.join(p, d), result);
+//       try{
+//         fs.accessSync(path.join(p, d), fs.constants.F_OK | fs.constants.R_OK | fs.constants.W_OK)
+//         console.log("접근가능");
+//       }catch(err){
+//         console.log(err);
+//       }
+
+//     })
+//     console.log(fs.readdirSync(p));
+//     setTimeout(() => {
+//       console.log("waiting 1000ms...")  
+//       fs.rmdirSync(p);
+//     }, 1000);    
+
+//     //fs.rmdirSync(p);
+//     console.log(`${p} 폴더를 삭제했습니다.`);
+//     result.success.push(`${p} 폴더를 삭제했습니다.`);
+//   } catch (e) {
+//     console.log(e);
+//     fs.unlinkSync(p);
+//     console.log(`${p} 파일을 삭제했습니다.`);
+//     result.success.push(`${p} 파일을 삭제했습니다.`);
+//   }
+// }
 
 // netstat -tnlp
 // kill -9 pid

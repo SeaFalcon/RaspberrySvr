@@ -54,6 +54,7 @@
   <button class="btn" id="remove">삭제</button>
   <button class="btn" id="mkdir">폴더생성</button>
   <button class="btn" id="touch">파일생성</button>
+  <button class="btn" id="confirm">확인</button>
   <div id='fileList'>
 
   </div>
@@ -61,6 +62,7 @@
   </body>
 
   <script>
+    var selectedList = {};
     var selectedDirList = [];
     var selectedFileList = [];
     var osType;
@@ -69,6 +71,7 @@
     var arrPath;
     var arrPathLinux;
     var arrPathWin;
+    var curPath;
 
     $(document).ready(function () {
       $.post('osInfo', (os) => {
@@ -89,26 +92,29 @@
       $('#copy').click(copy);
       $('#move').click(move);
       $('#touch').click(touch);
+      $('#confirm').css('visibility', 'hidden');
     });
 
-    function rendering(path) {
+    function rendering(path, selectedList) {
       $('#fileList').children().remove();
       $(document).off('click', '#fileList div');
       $(document).off('click', ':checkbox');
       selectedDirList = [];
       selectedFileList = [];
+      curPath = path;
 
       arrPath = osType === OSTYPE_LINUX ? path.split('/') : path.split('\\');
       $('#fileList').prepend(`<h4>${path}</3>`)
 
       if (arrPath.length > 2) {
         $('#fileList').append($(`<span class="isFile isUpper">.</span>`).data('name', 'root').click(e => {
-          rendering(osType === OSTYPE_WINDOWS ? 'C:\\' : '/');
+          rendering(osType === OSTYPE_WINDOWS ? 'C:\\' : '/', selectedList);
         }));
         $('#fileList').append($(`<span class="isFile isUpper">..</span>`).data('name', 'upper').click(e => {
           rendering(osType === OSTYPE_WINDOWS ?
             arrPath.slice(0, arrPath.length - 2).join('\\') + '\\' :
-            arrPath.slice(0, arrPath.length - 2).join('/') + '/'
+            arrPath.slice(0, arrPath.length - 2).join('/') + '/',
+            selectedList
           );
         }));
       }
@@ -149,7 +155,7 @@
 
         if ($(e.target).hasClass('fileDiv')) {
         } else if ($(e.target).hasClass('dirDiv') || $(e.target).hasClass('isDir')) {
-          rendering(`${path}${$(e.target).closest('div').data("name")}${osType === OSTYPE_WINDOWS ? '\\' : '/'}`);
+          rendering(`${path}${$(e.target).closest('div').data("name")}${osType === OSTYPE_WINDOWS ? '\\' : '/'}`, selectedList);
         }
       });
 
@@ -192,7 +198,7 @@
           alert(`${dirName} 폴더는 이미 존재합니다.`);
         } else {
           //alert(`${dirName} 폴더 생성이 완료 되었습니다.`);
-          rendering(osType == OSTYPE_LINUX ? arrPath.join('/') : arrPath.join('\\'));
+          rendering(osType == OSTYPE_LINUX ? arrPath.join('/') : arrPath.join('\\'), selectedList);
         }
       })
     }
@@ -202,43 +208,60 @@
         alert('삭제 할 항목을 선택해주세요.');
         return;
       } else {
-        if (selectedDirList.length > 0) {
-          $.post('/rmdir', {
-            path: arrPath.join('/'),
-            dirList: selectedDirList
-          }, res => {
-            console.log(res);
-          });
-        }
+        $.post('/remove', {
+          path: arrPath.join('/'),
+          name: selectedDirList.concat(selectedFileList)
+        }, res => {
+          console.log(res);
+        });
+        //Node.js 파일삭제시 권한 문제로 인해 배열하나로 모아 전체적으로 삭제하는 방식으로 변경 
+        // if (selectedDirList.length > 0) {
+        //   $.post('/rmdir', {
+        //     path: arrPath.join('/'),
+        //     dirList: selectedDirList
+        //   }, res => {
+        //     console.log(res);
+        //   });
+        // }
 
-        if (selectedFileList.length > 0) {
-          $.post('/unlinkFile', {
-            path: arrPath.join('/'),
-            fileList: selectedFileList
-          }, res => {
-            console.log(res);
-          });
-        }
-
-
-
+        // if (selectedFileList.length > 0) {
+        //   $.post('/unlinkFile', {
+        //     path: arrPath.join('/'),
+        //     fileList: selectedFileList
+        //   }, res => {
+        //     console.log(res);
+        //   });
+        // }
       }
 
-      rendering(osType == OSTYPE_LINUX ? arrPath.join('/') : arrPath.join('\\'));
+      rendering(osType == OSTYPE_LINUX ? arrPath.join('/') : arrPath.join('\\'), selectedList);
     }
 
     function copy() {
-      if (selectedDirList.length === 0) {
+      if (selectedDirList.length === 0 && selectedFileList.length === 0) {
         alert('복사 할 항목을 선택해주세요.');
         return;
+      } else {
+        $('#confirm').off('click');
+        $('#confirm').on('click', copyConfirm);
+        $('#confirm').css('visibility', 'initial');
+        selectedList.selectedDirList = selectedDirList;
+        selectedList.selectedFileList = selectedFileList;
       }
 
     }
 
     function move() {
-      if (selectedDirList.length === 0) {
+      if (selectedDirList.length === 0 && selectedFileList.length === 0) {
         alert('이동 할 항목을 선택해주세요.');
         return;
+      } else {
+        $('#confirm').off('click');
+        $('#confirm').on('click', moveConfirm);
+        $('#confirm').css('visibility', 'initial');
+        selectedList.selectedDirList = selectedDirList;
+        selectedList.selectedFileList = selectedFileList;
+        selectedList.curPath = curPath;
       }
 
     }
@@ -261,10 +284,48 @@
           alert(`${fileName} 파일은 이미 존재합니다.`);
         } else {
           //alert(`${dirName} 폴더 생성이 완료 되었습니다.`);
-          rendering(osType == OSTYPE_LINUX ? arrPath.join('/') : arrPath.join('\\'));
+          rendering(osType == OSTYPE_LINUX ? arrPath.join('/') : arrPath.join('\\'), selectedList);
         }
       })
 
+    }
+
+    function copyConfirm() {
+      console.log('카피')
+
+      $.post('/copy', {
+        path: arrPath.join('/'),
+        name: selectedDirList.concat(selectedFileList)
+      }, res => {
+        console.log(res);
+      });
+
+      $('#confirm').css('visibility', 'hidden');
+    }
+
+    function moveConfirm() {
+      console.log('무브')
+
+      if (selectedList.selectedDirList.length === 0 && selectedList.selectedFileList.length === 0) {
+        return;
+      }
+
+      console.log({
+        path: selectedList.curPath, //arrPath.join('/'),
+        sources: selectedList.selectedDirList.concat(selectedList.selectedFileList),
+        destination: curPath
+      });
+
+      $.post('/move', {
+        path: selectedList.curPath, //arrPath.join('/'),
+        sources: selectedList.selectedDirList.concat(selectedList.selectedFileList),
+        destination: curPath
+      }, res => {
+        console.log(res);
+      });
+
+      selectedList = {};
+      $('#confirm').css('visibility', 'hidden');
     }
 
 
